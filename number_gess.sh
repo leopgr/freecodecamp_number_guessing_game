@@ -33,11 +33,36 @@ function fn_generate_random_number(){
    RANDOM_NUMBER=$(shuf -i 1-1000 -n 1)
 }
 
+function fn_handle_user_info(){
+   local USER_EXISTS
+
+   PSQL="psql --username=freecodecamp --dbname=number_guess -q -t --no-align -c"
+   
+   USER_EXISTS=$($PSQL "select count(*) from users where name='$USERNAME'")
+   if [ $USER_EXISTS -eq 0 ]; then
+      $PSQL "insert into users(name) values('$USERNAME')"
+      echo -e "Welcome, $USERNAME! It looks like this is your first time here."
+   else
+      USER_ID=$($PSQL "select user_id from users where name='$USERNAME'")
+      PLAYED_GAMES=$($PSQL "select count(*) from matches where user_id=$USER_ID")
+      BEST_SCORE=$($PSQL "select min(score) from matches where user_id=$USER_ID")
+
+      echo -e "Welcome back, $USERNAME! You have played $PLAYED_GAMES games, and your best game took ${BEST_SCORE:-0} guesses."
+   fi
+}
+
+
 #main
 if [ "${SCRIPT_PARAM}" == "--build" ]; then
    fn_create_exercise_database
-else
+   exit
+elif [ "${SCRIPT_PARAM}" != "NONE" ]; then
    exit 1
 fi
+
+echo -e "Enter your username:"
+read USERNAME
+
+fn_handle_user_info
 
 fn_generate_random_number
