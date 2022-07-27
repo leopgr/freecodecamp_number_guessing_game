@@ -1,5 +1,5 @@
 #!/bin/bash
-if [ $# -eq 1]; then
+if [ $# -eq 1 ]; then
    SCRIPT_PARAM="$1"
 else
    SCRIPT_PARAM="NONE"
@@ -12,13 +12,21 @@ function fn_create_exercise_database(){
    
    PSQL="/usr/bin/psql --username=freecodecamp --dbname=postgres -q -t --no-align -c"
    # create exercise database
-   $PSQL "drop database if exists number_guess" > /dev/null 2>&1
-
+   echo -e "# Dropping existent number_guess database"
+   $PSQL "drop database if exists number_guess"
+   
+   echo -e "# Creating new number_guess database"
    $PSQL "create database number_guess"
 
-   # create exercise table
+   # create exercise tables
    PSQL="psql --username=freecodecamp --dbname=number_guess -t --no-align -c"
 
+   echo -e "# Creating \"users\" table"
+   $PSQL "create table users(user_id serial primary key, name varchar(22))"
+   
+   echo -e "# Creating \"matches\" table"
+   $PSQL "create table matches(match_id serial primary key, user_id int, match_date timestamp, score int, \
+   constraint user_id_fk foreign key(user_id) references users(user_id))"
 }
 
 function fn_generate_random_number(){
@@ -26,7 +34,7 @@ function fn_generate_random_number(){
 }
 
 #main
-if [ "${SCRIPT_PARAM}" == "--build"]; then
+if [ "${SCRIPT_PARAM}" == "--build" ]; then
    fn_create_exercise_database
 else
    exit 1
