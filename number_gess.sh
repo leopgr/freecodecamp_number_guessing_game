@@ -12,5 +12,10 @@ function fn_create_exercise_database(){
    $PSQL_QUERY "create database number_guess"
 }
 
+function fn_generate_random_number(){
+   RANDOM_NUMBER=$(shuf -i 1-1000 -n 1)
+}
+
 #main
 fn_create_exercise_database
+fn_generate_random_number
