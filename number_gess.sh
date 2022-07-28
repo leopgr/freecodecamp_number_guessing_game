@@ -51,6 +51,46 @@ function fn_handle_user_info(){
    fi
 }
 
+function fn_run_game(){
+   local GUESSES_NUMBER=0
+
+   PSQL="psql --username=freecodecamp --dbname=number_guess -q -t --no-align -c"
+
+   fn_generate_random_number
+
+   echo -e "Guess the secret number between 1 and 1000:"
+   read USER_GUESS
+   
+   re='^[0-9]+$'
+   while [[ ! $USER_GUESS =~ $re ]]
+   do
+      echo -e "That is not an integer, guess again:"
+      read USER_GUESS
+   done
+   
+   GUESSES_NUMBER=$((GUESSES_NUMBER+1))
+   while [[ $USER_GUESS != $RANDOM_NUMBER ]]
+   do
+      if [ $USER_GUESS -gt $RANDOM_NUMBER ]; then
+         echo -e "It's lower than that, guess again:"
+      else
+         echo -e "It's higher than that, guess again:"
+      fi
+
+      read USER_GUESS
+      re='^[0-9]+$'
+      while [[ ! $USER_GUESS =~ $re ]]
+      do
+         echo -e "That is not an integer, guess again:"
+         read USER_GUESS
+      done
+      GUESSES_NUMBER=$((GUESSES_NUMBER+1))
+   done
+
+   echo -e "You guessed it in $GUESSES_NUMBER tries. The secret number was $RANDOM_NUMBER. Nice job!"
+
+   $PSQL "insert into matches(user_id,match_date,score) values($USER_ID,NOW(),$GUESSES_NUMBER)"
+}
 
 #main
 if [ "${SCRIPT_PARAM}" == "--build" ]; then
@@ -65,4 +105,5 @@ read USERNAME
 
 fn_handle_user_info
 
-fn_generate_random_number
+fn_run_game
+
