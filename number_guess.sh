@@ -40,19 +40,25 @@ function fn_handle_user_info(){
    
    USER_EXISTS=$($PSQL "select count(*) from users where name='$USERNAME'")
    if [ $USER_EXISTS -eq 0 ]; then
-      $PSQL "insert into users(name) values('$USERNAME')"
+      $PSQL "insert into users(name) values('$USERNAME')" 
       echo -e "Welcome, $USERNAME! It looks like this is your first time here."
-   else
-      USER_ID=$($PSQL "select user_id from users where name='$USERNAME'")
-      PLAYED_GAMES=$($PSQL "select count(*) from matches where user_id=$USER_ID")
-      BEST_SCORE=$($PSQL "select min(score) from matches where user_id=$USER_ID")
-
-      echo -e "Welcome back, $USERNAME! You have played $PLAYED_GAMES games, and your best game took ${BEST_SCORE:-0} guesses."
    fi
+
+   USER_ID=$($PSQL "select user_id from users where name='$USERNAME'") 
+   PLAYED_GAMES=$($PSQL "select count(*) from matches where user_id=$USER_ID") 
+   BEST_SCORE=$($PSQL "select min(score) from matches where user_id=$USER_ID") 
+
+   USER_ID="$(echo -e "${USER_ID}" | tr -d '[:space:]')"
+   USERNAME="$(echo -e "${USERNAME}" | tr -d '[:space:]')"
+   PLAYED_GAMES="$(echo -e "${PLAYED_GAMES}" | tr -d '[:space:]')"
+   BEST_SCORE="$(echo -e "${BEST_SCORE}" | tr -d '[:space:]')"
+   
+
+   [ $USER_EXISTS -ne 0 ] && echo -e "Welcome back, $USERNAME! You have played $PLAYED_GAMES games, and your best game took ${BEST_SCORE:-0} guesses."
 }
 
 function fn_run_game(){
-   local GUESSES_NUMBER=0
+   GUESS_COUNT=0
 
    PSQL="psql --username=freecodecamp --dbname=number_guess -q -t --no-align -c"
 
@@ -60,15 +66,16 @@ function fn_run_game(){
 
    echo -e "Guess the secret number between 1 and 1000:"
    read USER_GUESS
-   
+   GUESS_COUNT=$((GUESS_COUNT+1))
+
    re='^[0-9]+$'
    while [[ ! $USER_GUESS =~ $re ]]
    do
       echo -e "That is not an integer, guess again:"
       read USER_GUESS
+      GUESS_COUNT=$((GUESS_COUNT+1))
    done
    
-   GUESSES_NUMBER=$((GUESSES_NUMBER+1))
    while [[ $USER_GUESS != $RANDOM_NUMBER ]]
    do
       if [ $USER_GUESS -gt $RANDOM_NUMBER ]; then
@@ -78,18 +85,18 @@ function fn_run_game(){
       fi
 
       read USER_GUESS
+      GUESS_COUNT=$((GUESS_COUNT+1))
       re='^[0-9]+$'
       while [[ ! $USER_GUESS =~ $re ]]
       do
          echo -e "That is not an integer, guess again:"
          read USER_GUESS
+         GUESS_COUNT=$((GUESS_COUNT+1))
       done
-      GUESSES_NUMBER=$((GUESSES_NUMBER+1))
+      
    done
-
-   echo -e "You guessed it in $GUESSES_NUMBER tries. The secret number was $RANDOM_NUMBER. Nice job!"
-
-   $PSQL "insert into matches(user_id,match_date,score) values($USER_ID,NOW(),$GUESSES_NUMBER)"
+   $PSQL "insert into matches(user_id,match_date,score) values($USER_ID,NOW(),$GUESS_COUNT)"
+   echo -e "You guessed it in $GUESS_COUNT tries. The secret number was $RANDOM_NUMBER. Nice job!"
 }
 
 #main
@@ -100,7 +107,8 @@ elif [ "${SCRIPT_PARAM}" != "NONE" ]; then
    exit 1
 fi
 
-echo -e "Enter your username:"
+echo -e "Enter your username:\n"
+
 read USERNAME
 
 fn_handle_user_info
