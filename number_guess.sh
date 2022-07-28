@@ -73,7 +73,6 @@ function fn_run_game(){
    do
       echo -e "That is not an integer, guess again:"
       read USER_GUESS
-      GUESS_COUNT=$((GUESS_COUNT+1))
    done
    
    while [[ $USER_GUESS != $RANDOM_NUMBER ]]
@@ -91,7 +90,6 @@ function fn_run_game(){
       do
          echo -e "That is not an integer, guess again:"
          read USER_GUESS
-         GUESS_COUNT=$((GUESS_COUNT+1))
       done
       
    done
